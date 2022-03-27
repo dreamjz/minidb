@@ -2,6 +2,8 @@ package minidb
 
 import "encoding/binary"
 
+// entry 头部: KeySize, ValueSize, Mark
+// 10 = 4 + 4 + 2
 const entryHeaderSize = 10
 
 const (

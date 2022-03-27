@@ -10,7 +10,7 @@ type MiniDB struct {
 	indexes map[string]int64 // 内存中的索引信息
 	dbFile  *DBFile          // 数据文件
 	dirPath string           // 数据目录
-	mu      sync.RWMutex
+	mu      sync.RWMutex     // 读写锁
 }
 
 // Open 开启一个数据库实例
@@ -28,6 +28,7 @@ func Open(dirPath string) (*MiniDB, error) {
 		return nil, err
 	}
 
+	// 创建数据库实例
 	db := &MiniDB{
 		dbFile:  dbFile,
 		indexes: make(map[string]int64),

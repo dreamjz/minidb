@@ -17,6 +17,7 @@ func newInternal(fileName string) (*DBFile, error) {
 		return nil, err
 	}
 
+	// 获取文件大小
 	stat, err := os.Stat(fileName)
 	if err != nil {
 		return nil, err
