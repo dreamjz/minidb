@@ -37,6 +37,7 @@ func (e *Entry) GetSize() int64 {
 // Encode 编码 Entry，返回字节数组
 func (e *Entry) Encode() ([]byte, error) {
 	buf := make([]byte, e.GetSize())
+	// 使用大端序编码
 	binary.BigEndian.PutUint32(buf[0:4], e.KeySize)
 	binary.BigEndian.PutUint32(buf[4:8], e.ValueSize)
 	binary.BigEndian.PutUint16(buf[8:10], e.Mark)

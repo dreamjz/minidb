@@ -8,10 +8,11 @@ const MergeFileName = "minidb.data.merge"
 // DBFile 数据文件定义
 type DBFile struct {
 	File   *os.File
-	Offset int64
+	Offset int64 // 偏移量，指向文件末尾，将从此处开始写入
 }
 
 func newInternal(fileName string) (*DBFile, error) {
+	// 0644 仅所属用户有 读写权限，其他用只读
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return nil, err
@@ -27,6 +28,7 @@ func newInternal(fileName string) (*DBFile, error) {
 
 // NewDBFile 创建一个新的数据文件
 func NewDBFile(path string) (*DBFile, error) {
+	// os.PathSeparator 可以避免因不同的操作系统造成的文件路径差异
 	fileName := path + string(os.PathSeparator) + FileName
 	return newInternal(fileName)
 }
@@ -39,16 +41,20 @@ func NewMergeDBFile(path string) (*DBFile, error) {
 
 // Read 从 offset 处开始读取
 func (df *DBFile) Read(offset int64) (e *Entry, err error) {
+	// 读取 Entry Header (KeySize, ValueSize, Mark)
 	buf := make([]byte, entryHeaderSize)
 	if _, err = df.File.ReadAt(buf, offset); err != nil {
 		return
 	}
+	// 解码
 	if e, err = Decode(buf); err != nil {
 		return
 	}
 
+	// 移动偏移量
 	offset += entryHeaderSize
 	if e.KeySize > 0 {
+		// 读取 Key
 		key := make([]byte, e.KeySize)
 		if _, err = df.File.ReadAt(key, offset); err != nil {
 			return
@@ -58,6 +64,7 @@ func (df *DBFile) Read(offset int64) (e *Entry, err error) {
 
 	offset += int64(e.KeySize)
 	if e.ValueSize > 0 {
+		// 读取 Value
 		value := make([]byte, e.ValueSize)
 		if _, err = df.File.ReadAt(value, offset); err != nil {
 			return
@@ -69,11 +76,13 @@ func (df *DBFile) Read(offset int64) (e *Entry, err error) {
 
 // Write 写入 Entry
 func (df *DBFile) Write(e *Entry) (err error) {
+	// 编码
 	enc, err := e.Encode()
 	if err != nil {
 		return err
 	}
 	_, err = df.File.WriteAt(enc, df.Offset)
+	// 更新偏移量
 	df.Offset += e.GetSize()
 	return
 }

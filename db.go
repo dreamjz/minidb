@@ -48,8 +48,8 @@ func (db *MiniDB) Merge() error {
 	}
 
 	var (
-		validEntries []*Entry
-		offset       int64
+		validEntries []*Entry // 可用记录
+		offset       int64    // 读取偏移量
 	)
 
 	// 读取原数据文件中的 Entry
@@ -109,13 +109,15 @@ func (db *MiniDB) Merge() error {
 
 // Put 写入数据
 func (db *MiniDB) Put(key []byte, value []byte) (err error) {
+	// Key 不为空
 	if len(key) == 0 {
 		return
 	}
-
+	// 加锁
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
+	// 插入元素的开头
 	offset := db.dbFile.Offset
 	// 封装成 Entry
 	entry := NewEntry(key, value, PUT)
@@ -190,6 +192,7 @@ func (db *MiniDB) loadIndexesFromFile() {
 
 	var offset int64
 	for {
+		// 读取 Entry
 		e, err := db.dbFile.Read(offset)
 		if err != nil {
 			// 读取完毕
@@ -206,7 +209,7 @@ func (db *MiniDB) loadIndexesFromFile() {
 			// 删除内存中的 key
 			delete(db.indexes, string(e.Key))
 		}
-
+		// 移动偏移量
 		offset += e.GetSize()
 	}
 	return
